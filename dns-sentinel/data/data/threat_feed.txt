@@ -1,2 +1,0 @@
-c2-beacon.test
-example-malware.test
