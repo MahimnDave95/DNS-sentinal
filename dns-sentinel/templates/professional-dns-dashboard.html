@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNS Sentinel | Security Operations</title>
+<style>
+:root{--bg:#080e18;--panel:#0f1b2e;--panel2:#13243b;--line:#263b5b;--text:#eaf2fc;--muted:#889db9;--teal:#45d8c4;--red:#ff6d7d;--amber:#f5c86d;--green:#6fe29a;--blue:#77aafd}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(850px 480px at 75% -10%,#173a5e,transparent 65%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+.app{display:flex;min-height:100vh}.side{width:240px;position:fixed;inset:0 auto 0 0;background:#0b1422;border-right:1px solid var(--line);padding:22px 14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;margin-bottom:35px}.logo{width:34px;height:34px;border:1px solid var(--teal);border-radius:10px;color:var(--teal);display:grid;place-items:center}
+.label{font-size:10px;color:#617997;letter-spacing:.16em;text-transform:uppercase;margin:0 10px 10px}
+nav a{display:flex;gap:12px;color:var(--muted);padding:12px;border-radius:9px;text-decoration:none;margin:4px 0;font-size:14px}
+nav a:hover,nav a.active{color:#fff;background:#162943}nav a.active{box-shadow:inset 3px 0 var(--teal)}
+.side-status{position:absolute;bottom:22px;left:14px;right:14px;padding:12px;border:1px solid var(--line);border-radius:9px;color:var(--muted);font-size:12px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:7px}
+.main{margin-left:240px;width:calc(100% - 240px);padding:30px 36px}
+.top{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:24px}
+.kicker{font-size:10px;color:var(--teal);letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+.top h1{font-size:28px;margin:7px 0 4px}.sub{margin:0;color:var(--muted);font-size:14px}
+.actions{display:flex;gap:8px}.btn{border:1px solid var(--line);background:#14243b;color:#fff;border-radius:7px;padding:10px 13px}
+.btn:hover{border-color:var(--teal)}.primary{background:var(--teal);color:#04251f;border-color:var(--teal);font-weight:800}
+.danger{background:#421e2b;border-color:#743447;color:#ffb0ba}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px}
+.metric,.panel{border:1px solid var(--line);border-radius:12px;background:linear-gradient(145deg,#12233a,#0d1829);box-shadow:0 15px 35px rgba(0,0,0,.2)}
+.metric{padding:16px}.metric-head{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+.number{font-size:30px;font-weight:850;margin:8px 0 4px}.note{font-size:12px;color:var(--muted)}
+.red{color:var(--red)}.amber{color:var(--amber)}.green{color:var(--green)}.teal{color:var(--teal)}
+.layout{display:grid;grid-template-columns:1.3fr .9fr;gap:15px}
+.panel{padding:17px;margin-bottom:15px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.panel h2{font-size:15px;margin:0}.panel-head small{color:var(--muted)}
+.chart{height:190px;display:flex;align-items:end;gap:10px;border-bottom:1px solid var(--line);padding:10px 5px 27px}
+.bar-wrap{height:100%;flex:1;display:flex;align-items:end;position:relative}
+.bar{width:100%;background:linear-gradient(var(--teal),#177f86);border-radius:5px 5px 0 0;min-height:8px}
+.bar-label{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);color:#647d9d;font-size:10px}
+.alert{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid rgba(38,59,91,.7)}.alert:last-child{border:0}
+.severity{font-size:10px;padding:5px 7px;border-radius:5px;font-weight:800;height:max-content}
+.high{background:#48212e;color:#ffabb7}.medium{background:#48381b;color:#f8d88d}.low{background:#173a31;color:#9af1b8}
+.alert b{font-size:13px}.alert small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.table-panel{padding:0;overflow:hidden}.table-panel .panel-head{padding:17px 17px 0}
+.tools{display:flex;gap:8px;flex-wrap:wrap;padding:0 17px 15px}
+.input,.select{background:#091423;color:#fff;border:1px solid var(--line);border-radius:7px;padding:10px;min-width:190px}
+.table-wrap{overflow:auto}.table{border-collapse:collapse;width:100%;min-width:800px}
+.table th,.table td{text-align:left;padding:12px 17px;border-top:1px solid rgba(38,59,91,.7);font-size:12px;white-space:nowrap}
+.table th{color:var(--muted);background:#0c1728}
+.domain{font-family:Consolas,monospace;color:#a8d9ff}
+.decision{font-weight:800;font-size:10px;letter-spacing:.06em}.allowed{color:var(--green)}.blocked{color:var(--red)}.review{color:var(--amber)}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.setting{padding:15px;background:#0d192b;border:1px solid var(--line);border-radius:9px}
+.setting-line{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.setting h3{font-size:13px;margin:0 0 4px}.setting p{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.switch{width:46px;height:25px;border-radius:20px;background:#34455f;padding:3px;border:0;flex:0 0 auto}
+.switch i{display:block;width:19px;height:19px;background:#c7d2e2;border-radius:50%;transition:.18s}
+.switch.on{background:var(--teal)}.switch.on i{transform:translateX(21px);background:#052923}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.toast{display:none;position:fixed;bottom:22px;right:22px;padding:13px 16px;background:#172c48;border:1px solid var(--teal);border-radius:8px;box-shadow:0 15px 35px #0008;font-size:13px;z-index:4}
+.modal{display:none;position:fixed;inset:0;background:#02060bb8;place-items:center;z-index:3}
+.modal.open{display:grid}.dialog{width:min(430px,calc(100% - 30px));background:#12233a;border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:0 25px 70px #000b}
+.dialog h2{margin:0 0 7px;font-size:18px}.dialog p{color:var(--muted);font-size:13px;line-height:1.5}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+@media(max-width:950px){.metrics{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
+@media(max-width:680px){.side{width:68px;padding:18px 9px}.brand span,.label,nav a span,.side-status{display:none}.main{margin-left:68px;width:calc(100% - 68px);padding:20px 14px}.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions .btn{flex:1}.settings{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo">D</div><span>DNS Sentinel</span></div>
+    <p class="label">Operations</p>
+    <nav>
+      <a href="#overview" class="active"><span>◈</span><span>Overview</span></a>
+      <a href="#events"><span>≡</span><span>DNS Events</span></a>
+      <a href="#policies"><span>◇</span><span>Policies</span></a>
+      <a href="#feeds"><span>↥</span><span>Threat Feeds</span></a>
+    </nav>
+    <div class="side-status"><span class="dot"></span><b style="color:white">Resolver online</b><br>Local policy engine active</div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <div>
+        <div class="kicker">OT security operations</div>
+        <h1>DNS security overview</h1>
+        <p class="sub">Control filtering policies and monitor your Windows resolver</p>
+      </div>
+      <div class="actions">
+        <button class="btn" id="refresh">↻ Refresh</button>
+        <button class="btn danger" id="deleteLogs">⌫ Remove all logs</button>
+        <button class="btn primary" id="export">Export CSV</button>
+      </div>
+    </header>
+
+    <section class="metrics">
+      <div class="metric">
+        <div class="metric-head">Queries observed <span>24h</span></div>
+        <div class="number" id="total">—</div>
+        <div class="note">Local resolver events</div>
+      </div>
+      <div class="metric">
+        <div class="metric-head">Blocked requests <span class="red">●</span></div>
+        <div class="number red" id="blocked">—</div>
+        <div class="note" id="rate">— of all queries</div>
+      </div>
+      <div class="metric">
+        <div class="metric-head">Active alerts <span class="amber">▲</span></div>
+        <div class="number amber" id="alerts">—</div>
+        <div class="note">Policy and threat events</div>
+      </div>
+      <div class="metric">
+        <div class="metric-head">Operating mode <span class="green">●</span></div>
+        <div class="number teal" style="font-size:22px">OFFLINE</div>
+        <div class="note">Local policy database</div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-head"><h2>DNS activity</h2><small>Last 12 hours</small></div>
+        <div class="chart" id="chart"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Priority alerts</h2><small id="alertCount">—</small></div>
+        <div id="alerts"></div>
+      </section>
+    </div>
+
+    <section class="panel" id="policies">
+      <div class="panel-head"><h2>Filtering policy controls</h2><small>Changes save immediately</small></div>
+      <div class="settings" id="settings"></div>
+    </section>
+
+    <section class="panel table-panel" id="events">
+      <div class="panel-head"><h2>Recent DNS events</h2><small id="eventCount">—</small></div>
+      <div class="tools">
+        <input class="input" id="search" placeholder="Search domain, client, category">
+        <select class="select" id="filter">
+          <option value="all">All decisions</option>
+          <option value="blocked">Blocked only</option>
+          <option value="allowed">Allowed only</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>Timestamp</th><th>Client</th><th>Domain</th><th>Category</th><th>Decision</th><th>Reason</th><th>Risk</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal">
+  <div class="dialog">
+    <h2>Remove all DNS logs?</h2>
+    <p>This permanently deletes the locally stored DNS event history. Filtering rules and threat feeds will not be changed.</p>
+    <div class="dialog-actions">
+      <button class="btn" id="cancel">Cancel</button>
+      <button class="btn danger" id="confirmDelete">Delete all logs</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let events=[];let policy={};const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+function toast(t){const x=$('#toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2600)}
+async function load(){try{const [er,pr]=await Promise.all([fetch('/api/events'),fetch('/api/policy')]);events=await er.json();policy=await pr.json();renderAll()}catch(e){toast('Backend is not reachable')}}
+function renderAll(){renderMetrics();renderChart();renderAlerts();renderSettings();renderRows()}
+function renderMetrics(){const b=events.filter(x=>x.decision==='blocked').length,a=events.filter(x=>x.decision!=='allowed').length;$('#total').textContent=events.length;$('#blocked').textContent=b;$('#alerts').textContent=a;$('#rate').textContent=`${events.length?Math.round(b/events.length*100):0}% of all queries`;$('#eventCount').textContent=`${events.length} events`;$('#alertCount').textContent=`${a} active`}
+function renderChart(){const vals=[4,8,5,12,7,15,10,18,14,22,17,Math.max(8,events.length)];$('#chart').innerHTML=vals.map((v,i)=>`<div class="bar-wrap"><div class="bar" style="height:${Math.min(96,v*4)}%"></div><span class="bar-label">${i+1}h</span></div>`).join('')}
+function renderAlerts(){const bad=events.filter(x=>x.decision!=='allowed').slice(0,5);$('#alerts').innerHTML=bad.length?bad.map(x=>`<div class="alert"><span class="severity ${x.risk>=90?'high':x.risk>=70?'medium':'low'}">${x.risk>=90?'HIGH':x.risk>=70?'MEDIUM':'LOW'}</span><div><b>${esc(x.domain)}</b><small>${esc(x.client_ip)} · ${esc(x.reason)} · risk ${esc(x.risk)}/100</small></div></div>`).join(''):`<div class="empty">No active alerts.</div>`}
+function renderSettings(){const names={social_media:'Social media',gambling:'Gambling',streaming:'Streaming',adult:'Adult content',malware:'Malware',phishing:'Phishing',new_domains:'New or suspicious domains'};const cats=policy.blocked_categories||{};$('#settings').innerHTML=Object.entries(names).map(([key,label])=>`<div class="setting"><div class="setting-line"><div><h3>${label}</h3><p>${key==='social_media'?'Block major social platforms and related subdomains.':key==='gambling'?'Block gambling and betting domains.':key==='malware'?'Block known malware and command-and-control domains.':'Apply the local category policy to DNS requests.'}</p></div><button class="switch ${cats[key]?'on':''}" data-key="${key}" aria-label="Toggle ${label}"><i></i></button></div></div>`).join('')+`<div class="setting"><div class="setting-line"><div><h3>Strict OT allowlist mode</h3><p>Block unknown domains that are not present in the approved allowlist.</p></div><button class="switch ${policy.strict_ot_mode?'on':''}" data-key="strict_ot_mode" aria-label="Toggle strict OT mode"><i></i></button></div></div>`}
+function renderRows(){const q=($('#search').value||'').toLowerCase(),f=$('#filter').value;const list=events.filter(x=>(f==='all'||x.decision===f)&&(!q||`${x.domain} ${x.client_ip} ${x.category}`.toLowerCase().includes(q)));$('#rows').innerHTML=list.length?list.slice(0,200).map(x=>`<tr><td>${esc(x.timestamp)}</td><td>${esc(x.client_ip)}</td><td class="domain">${esc(x.domain)}</td><td>${esc(x.category)}</td><td class="decision ${esc(x.decision)}">${esc(x.decision).toUpperCase()}</td><td>${esc(x.reason)}</td><td>${esc(x.risk)}/100</td></tr>`).join(''):`<tr><td colspan="7" class="empty">No matching events.</td></tr>`}
+$('#settings').onclick=async e=>{const button=e.target.closest('[data-key]');if(!button)return;const key=button.dataset.key;const body=key==='strict_ot_mode'?{strict_ot_mode:!policy.strict_ot_mode}:{blocked_categories:{...policy.blocked_categories,[key]:!policy.blocked_categories[key]}};const r=await fetch('/api/policy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(r.ok){policy=await r.json();renderSettings();toast(`${key.replaceAll('_',' ')} policy updated`)}};
+$('#search').oninput=renderRows;$('#filter').onchange=renderRows;$('#refresh').onclick=()=>{load();toast('Dashboard refreshed')};$('#export').onclick=()=>location.href='/export';$('#deleteLogs').onclick=()=>$('#modal').classList.add('open');$('#cancel').onclick=()=>$('#modal').classList.remove('open');$('#confirmDelete').onclick=async()=>{const r=await fetch('/api/events',{method:'DELETE'});$('#modal').classList.remove('open');if(r.ok){events=[];renderAll();toast('All DNS logs removed')}};load();setInterval(load,7000);
+</script>
+</body>
+</html>
